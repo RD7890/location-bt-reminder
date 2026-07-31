@@ -1,0 +1,80 @@
+name: Build Android App
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - release/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build_release_apk:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Restore Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Recreate signing files
+        shell: bash
+        run: |
+          mkdir -p signing
+          printf '%s' "${{ secrets.SIGNING_KEYSTORE_B64 }}" | base64 -d > signing/release.jks
+
+      - name: Create local.properties
+        shell: bash
+        run: |
+          cat > local.properties <<EOF
+          signing.storeFile=$GITHUB_WORKSPACE/signing/release.jks
+          signing.storePassword=${{ secrets.SIGNING_STORE_PASSWORD }}
+          signing.keyAlias=${{ secrets.SIGNING_KEY_ALIAS }}
+          signing.keyPassword=${{ secrets.SIGNING_KEY_PASSWORD }}
+          EOF
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+
+      - name: Rename APK
+        shell: bash
+        run: |
+          mkdir -p release
+          APK_PATH="$(find . -type f -path '*build/outputs/apk/release/*.apk' | head -n 1)"
+          test -n "$APK_PATH"
+          cp "$APK_PATH" "release/location-bluetooth-reminder-${{ github.run_number }}.apk"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Build #${{ github.run_number }}
+          prerelease: true
+          generate_release_notes: true
+          files: release/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
