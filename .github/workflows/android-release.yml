@@ -55,7 +55,7 @@ jobs:
           signing.storeFile=$GITHUB_WORKSPACE/signing/release.jks
           signing.storePassword=reminder@Store2025
           signing.keyAlias=reminderkey
-          signing.keyPassword=reminder@Key2025
+          signing.keyPassword=reminder@Store2025
           EOF
 
       - name: Build Release APK
