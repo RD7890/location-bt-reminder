@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Location &amp; BT Reminder</string>
+    <string name="notif_title">Reminder Active</string>
+    <string name="notif_text">Monitoring Location &amp; Bluetooth state</string>
+    <string name="label_location">Location</string>
+    <string name="label_bluetooth">Bluetooth</string>
+    <string name="location_on">ON</string>
+    <string name="location_off">OFF</string>
+    <string name="bluetooth_on">ON</string>
+    <string name="bluetooth_off">OFF</string>
+    <string name="btn_start_reminder">Start Reminder</string>
+    <string name="hint_auto_stop">Reminder stops automatically when both are OFF</string>
+    <string name="both_already_off">Both Location &amp; Bluetooth are already OFF</string>
+    <string name="reminder_started">Reminder started!</string>
+    <string name="permissions_needed">Permissions required to monitor device state</string>
+</resources>
