@@ -55,6 +55,9 @@ class MainActivity : AppCompatActivity() {
             requestAutoStartPermission()
         }
 
+        // Schedule the job to listen to Location changes in the background (API 24+)
+        LocationJobService.schedule(this)
+
         refreshUi()
     }
 
@@ -93,17 +96,69 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("BatteryLife")
     private fun requestAutoStartPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val pm = getSystemService(PowerManager::class.java)
-            if (pm.isIgnoringBatteryOptimizations(packageName)) {
-                Toast.makeText(this, "Auto Start (Ignore Battery) is already enabled!", Toast.LENGTH_SHORT).show()
-                return
+        try {
+            val manufacturer = Build.MANUFACTURER.lowercase()
+            val intent = Intent()
+            when {
+                manufacturer.contains("xiaomi") -> {
+                    intent.component = android.content.ComponentName(
+                        "com.miui.securitycenter",
+                        "com.miui.permcenter.autostart.AutoStartManagementActivity"
+                    )
+                }
+                manufacturer.contains("oppo") -> {
+                    intent.component = android.content.ComponentName(
+                        "com.coloros.safecenter",
+                        "com.coloros.safecenter.permission.startup.StartupAppListActivity"
+                    )
+                }
+                manufacturer.contains("vivo") -> {
+                    intent.component = android.content.ComponentName(
+                        "com.vivo.permissionmanager",
+                        "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"
+                    )
+                }
+                manufacturer.contains("huawei") || manufacturer.contains("honor") -> {
+                    intent.component = android.content.ComponentName(
+                        "com.huawei.systemmanager",
+                        "com.huawei.systemmanager.optimize.process.ProtectActivity"
+                    )
+                }
+                else -> {
+                    // Fallback to standard ignore battery optimizations
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        val pm = getSystemService(PowerManager::class.java)
+                        if (pm.isIgnoringBatteryOptimizations(packageName)) {
+                            Toast.makeText(this, "Auto Start (Ignore Battery) is already enabled!", Toast.LENGTH_SHORT).show()
+                            return
+                        }
+                        val battIntent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                        battIntent.data = Uri.parse("package:$packageName")
+                        startActivity(battIntent)
+                        return
+                    }
+                }
             }
-            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+
+            // Check if the OEM intent resolves
+            val list = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            if (list.isNotEmpty()) {
+                Toast.makeText(this, "Please enable Auto Start for this app", Toast.LENGTH_LONG).show()
+                startActivity(intent)
+            } else {
+                // Fallback to battery opt if OEM intent doesn't resolve
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    val battIntent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                    battIntent.data = Uri.parse("package:$packageName")
+                    startActivity(battIntent)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Fallback to app settings
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
             intent.data = Uri.parse("package:$packageName")
             startActivity(intent)
-        } else {
-            Toast.makeText(this, "Not required on this Android version.", Toast.LENGTH_SHORT).show()
         }
     }
 
