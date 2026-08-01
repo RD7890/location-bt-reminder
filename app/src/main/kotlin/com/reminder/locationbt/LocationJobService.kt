@@ -44,11 +44,11 @@ class LocationJobService : JobService() {
     override fun onStartJob(params: JobParameters?): Boolean {
         Log.d(TAG, "Location settings changed (Job triggered)")
         
-        if (DeviceState.bothOff(this)) {
-            Log.d(TAG, "Both OFF -> stopping service")
+        if (DeviceState.isLocationOff(this)) {
+            Log.d(TAG, "Location OFF -> stopping service")
             ReminderService.stop(this)
         } else {
-            Log.d(TAG, "At least one ON -> starting service")
+            Log.d(TAG, "Location ON -> starting service")
             ReminderService.start(this)
         }
 

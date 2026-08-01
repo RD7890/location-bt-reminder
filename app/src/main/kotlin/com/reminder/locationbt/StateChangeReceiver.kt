@@ -22,11 +22,11 @@ class StateChangeReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Log.d(TAG, "Received: ${intent.action}")
 
-        if (DeviceState.bothOff(context)) {
-            Log.d(TAG, "Both OFF → stopping ReminderService.")
+        if (DeviceState.isLocationOff(context)) {
+            Log.d(TAG, "Location OFF → stopping ReminderService.")
             ReminderService.stop(context)
         } else {
-            Log.d(TAG, "At least one ON → ensuring ReminderService is running.")
+            Log.d(TAG, "Location ON → ensuring ReminderService is running.")
             ReminderService.start(context)
         }
     }

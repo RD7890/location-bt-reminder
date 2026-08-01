@@ -32,7 +32,7 @@ class ReminderService : Service() {
         private const val TAG = "ReminderService"
         private const val CHANNEL_ID = "reminder_channel"
         private const val NOTIF_ID = 1
-        private const val REMINDER_INTERVAL_MS = 60_000L  // every 60 seconds
+        private const val REMINDER_INTERVAL_MS = 30_000L  // every 30 seconds
         
         var isRunning = false
             private set
@@ -64,8 +64,8 @@ class ReminderService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private val reminderRunnable = object : Runnable {
         override fun run() {
-            if (DeviceState.bothOff(this@ReminderService)) {
-                Log.d(TAG, "Both off — stopping service.")
+            if (DeviceState.isLocationOff(this@ReminderService)) {
+                Log.d(TAG, "Location off — stopping service.")
                 stopSelf()
                 return
             }
@@ -85,9 +85,9 @@ class ReminderService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Check immediately; if both already off don't bother starting loop.
-        if (DeviceState.bothOff(this)) {
-            Log.d(TAG, "Both already off on start — stopping.")
+        // Check immediately; if location is already off don't bother starting loop.
+        if (DeviceState.isLocationOff(this)) {
+            Log.d(TAG, "Location already off on start — stopping.")
             stopSelf()
             return START_NOT_STICKY
         }
@@ -131,20 +131,17 @@ class ReminderService : Service() {
     private fun playReminders() {
         if (!soundsLoaded) return
 
-        val locationOn = DeviceState.isLocationOn(this)
-        val bluetoothOn = DeviceState.isBluetoothOn(this)
-
-        if (locationOn) {
-            Log.d(TAG, "Location ON — playing location reminder sound.")
+        if (DeviceState.isLocationOn(this)) {
+            Log.d(TAG, "Location ON — playing location reminder sound and vibrating.")
             soundPool.play(soundLocation, 1f, 1f, 1, 0, 1f)
-        }
-
-        if (bluetoothOn) {
-            Log.d(TAG, "Bluetooth ON — playing bluetooth reminder sound.")
-            // Slight delay so the two sounds don't fully overlap when both are on
-            handler.postDelayed({
-                soundPool.play(soundBluetooth, 1f, 1f, 1, 0, 1f)
-            }, 1_500L)
+            
+            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vibrator.vibrate(android.os.VibrationEffect.createOneShot(500, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(500)
+            }
         }
     }
 

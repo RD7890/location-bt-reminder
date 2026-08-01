@@ -165,7 +165,7 @@ class MainActivity : AppCompatActivity() {
     // ── Service control ───────────────────────────────────────────────────────
 
     private fun startReminderService() {
-        if (DeviceState.bothOff(this)) {
+        if (DeviceState.isLocationOff(this)) {
             Toast.makeText(this, R.string.both_already_off, Toast.LENGTH_SHORT).show()
         } else {
             ReminderService.start(this)

@@ -21,6 +21,6 @@ object DeviceState {
         return bm?.adapter?.isEnabled == true
     }
 
-    /** Returns true when BOTH features are off (reminder loop should stop). */
-    fun bothOff(context: Context): Boolean = !isLocationOn(context) && !isBluetoothOn(context)
+    /** Returns true when Location is off (reminder loop should stop). */
+    fun isLocationOff(context: Context): Boolean = !isLocationOn(context)
 }
