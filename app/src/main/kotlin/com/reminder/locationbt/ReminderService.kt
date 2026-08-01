@@ -76,11 +76,12 @@ class ReminderService : Service() {
         }
     }
 
+    private var isLooping = false
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     override fun onCreate() {
         super.onCreate()
-        isRunning = true
         createNotificationChannel()
         startForeground(NOTIF_ID, buildNotification())
         initSoundPool()
@@ -93,13 +94,16 @@ class ReminderService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        // Remove any pending callbacks before scheduling (handles re-starts cleanly).
-        handler.removeCallbacks(reminderRunnable)
-        handler.post(reminderRunnable)
+        
+        if (!isLooping) {
+            isLooping = true
+            handler.post(reminderRunnable)
+        }
         return START_STICKY
     }
 
     override fun onDestroy() {
+        isLooping = false
         isRunning = false
         handler.removeCallbacks(reminderRunnable)
         if (::soundPool.isInitialized) soundPool.release()

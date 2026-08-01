@@ -8,6 +8,7 @@
 
     <!-- Location state (coarse is enough to check if GPS is enabled) -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
     <!-- Foreground service to keep monitoring alive -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -54,7 +55,6 @@
             android:name=".StateChangeReceiver"
             android:exported="true">
             <intent-filter>
-                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
                 <action android:name="android.location.PROVIDERS_CHANGED" />
                 <action android:name="android.location.MODE_CHANGED" />
             </intent-filter>
