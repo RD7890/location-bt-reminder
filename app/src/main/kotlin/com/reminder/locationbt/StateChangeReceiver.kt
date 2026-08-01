@@ -22,12 +22,8 @@ class StateChangeReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Log.d(TAG, "Received: ${intent.action}")
 
-        if (DeviceState.isLocationOff(context)) {
-            Log.d(TAG, "Location OFF → stopping ReminderService.")
-            ReminderService.stop(context)
-        } else {
-            Log.d(TAG, "Location ON → ensuring ReminderService is running.")
-            ReminderService.start(context)
-        }
+        // We just ensure the service is running. The service itself handles looping vs pausing based on Location state.
+        Log.d(TAG, "Location state changed broadcast received → ensuring ReminderService is running.")
+        ReminderService.start(context)
     }
 }

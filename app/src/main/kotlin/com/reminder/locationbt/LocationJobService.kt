@@ -44,13 +44,9 @@ class LocationJobService : JobService() {
     override fun onStartJob(params: JobParameters?): Boolean {
         Log.d(TAG, "Location settings changed (Job triggered)")
         
-        if (DeviceState.isLocationOff(this)) {
-            Log.d(TAG, "Location OFF -> stopping service")
-            ReminderService.stop(this)
-        } else {
-            Log.d(TAG, "Location ON -> starting service")
-            ReminderService.start(this)
-        }
+        // We just ensure the service is running. The service itself handles looping vs pausing based on Location state.
+        Log.d(TAG, "Location state changed (Job triggered) -> ensuring ReminderService is running.")
+        ReminderService.start(this)
 
         // Reschedule to keep listening for the next change
         schedule(this)

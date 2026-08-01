@@ -5,8 +5,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.media.AudioAttributes
 import android.media.SoundPool
 import android.os.Handler
@@ -15,24 +17,13 @@ import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
 
-/**
- * Foreground service that:
- *  - Plays a specific sound when Location is ON.
- *  - Plays a different sound when Bluetooth is ON.
- *  - Stops itself when both are OFF.
- *
- * The reminder interval is [REMINDER_INTERVAL_MS]. Battery impact is minimal because
- * the service only schedules a Handler post — no wake locks, no busy-polling.
- * System-level BroadcastReceiver (StateChangeReceiver) can also start/stop this service
- * reactively whenever Bluetooth or Location state changes.
- */
 class ReminderService : Service() {
 
     companion object {
         private const val TAG = "ReminderService"
         private const val CHANNEL_ID = "reminder_channel"
         private const val NOTIF_ID = 1
-        private const val REMINDER_INTERVAL_MS = 30_000L  // every 30 seconds
+        private const val REMINDER_INTERVAL_MS = 30_000L
         
         var isRunning = false
             private set
@@ -64,11 +55,13 @@ class ReminderService : Service() {
     private var soundsLoaded = false
 
     private val handler = Handler(Looper.getMainLooper())
+    private var isLooping = false
+
     private val reminderRunnable = object : Runnable {
         override fun run() {
             if (DeviceState.isLocationOff(this@ReminderService)) {
-                Log.d(TAG, "Location off — stopping service.")
-                stopSelf()
+                Log.d(TAG, "Location off — stopping loop.")
+                isLooping = false
                 return
             }
             playReminders()
@@ -76,43 +69,57 @@ class ReminderService : Service() {
         }
     }
 
-    private var isLooping = false
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+    // Dynamic receiver to catch location changes instantly
+    private val locationReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            Log.d(TAG, "Location state changed dynamically")
+            checkAndLoop()
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
+        isRunning = true
         createNotificationChannel()
         startForeground(NOTIF_ID, buildNotification())
         initSoundPool()
+
+        val filter = IntentFilter().apply {
+            addAction("android.location.PROVIDERS_CHANGED")
+            addAction("android.location.MODE_CHANGED")
+        }
+        registerReceiver(locationReceiver, filter)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Check immediately; if location is already off don't bother starting loop.
-        if (DeviceState.isLocationOff(this)) {
-            Log.d(TAG, "Location already off on start — stopping.")
-            stopSelf()
-            return START_NOT_STICKY
-        }
-        
-        if (!isLooping) {
-            isLooping = true
-            handler.post(reminderRunnable)
-        }
+        checkAndLoop()
         return START_STICKY
     }
 
+    private fun checkAndLoop() {
+        if (DeviceState.isLocationOff(this)) {
+            Log.d(TAG, "Location is OFF. Stopping loop but keeping service alive.")
+            isLooping = false
+            handler.removeCallbacks(reminderRunnable)
+        } else {
+            if (!isLooping) {
+                Log.d(TAG, "Location is ON. Starting reminder loop.")
+                isLooping = true
+                handler.post(reminderRunnable)
+            }
+        }
+    }
+
     override fun onDestroy() {
-        isLooping = false
         isRunning = false
+        isLooping = false
         handler.removeCallbacks(reminderRunnable)
+        unregisterReceiver(locationReceiver)
         if (::soundPool.isInitialized) soundPool.release()
         super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
-
-    // ── Sound ─────────────────────────────────────────────────────────────────
 
     private fun initSoundPool() {
         val attrs = AudioAttributes.Builder()
@@ -121,7 +128,7 @@ class ReminderService : Service() {
             .build()
 
         soundPool = SoundPool.Builder()
-            .setMaxStreams(2)
+            .setMaxStreams(1)
             .setAudioAttributes(attrs)
             .build()
 
@@ -136,7 +143,7 @@ class ReminderService : Service() {
         if (!soundsLoaded) return
 
         if (DeviceState.isLocationOn(this)) {
-            Log.d(TAG, "Location ON — playing location reminder sound and vibrating.")
+            Log.d(TAG, "Location ON — playing sound and vibrating.")
             soundPool.play(soundLocation, 1f, 1f, 1, 0, 1f)
             
             val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
@@ -149,14 +156,12 @@ class ReminderService : Service() {
         }
     }
 
-    // ── Notification ──────────────────────────────────────────────────────────
-
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
             "Reminder Notifications",
             NotificationManager.IMPORTANCE_LOW
-        ).apply { description = "Location & Bluetooth reminder service" }
+        ).apply { description = "Monitoring Location state" }
 
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(channel)
