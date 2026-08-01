@@ -10,8 +10,11 @@
     <string name="bluetooth_on">ON</string>
     <string name="bluetooth_off">OFF</string>
     <string name="btn_start_reminder">Start Reminder</string>
+    <string name="btn_stop_reminder">Stop Reminder</string>
+    <string name="btn_auto_start">Enable Auto Start</string>
     <string name="hint_auto_stop">Reminder stops automatically when both are OFF</string>
     <string name="both_already_off">Both Location &amp; Bluetooth are already OFF</string>
     <string name="reminder_started">Reminder started!</string>
+    <string name="reminder_stopped">Reminder stopped manually</string>
     <string name="permissions_needed">Permissions required to monitor device state</string>
 </resources>

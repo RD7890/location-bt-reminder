@@ -1,9 +1,14 @@
 package com.reminder.locationbt
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -35,11 +40,19 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.btnToggleReminder.setOnClickListener {
-            if (hasPermissions()) {
-                startReminderService()
+            if (ReminderService.isRunning) {
+                stopReminderService()
             } else {
-                requestPermissions()
+                if (hasPermissions()) {
+                    startReminderService()
+                } else {
+                    requestPermissions()
+                }
             }
+        }
+
+        binding.btnAutoStart.setOnClickListener {
+            requestAutoStartPermission()
         }
 
         refreshUi()
@@ -76,6 +89,24 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ── Auto Start ────────────────────────────────────────────────────────────
+
+    @SuppressLint("BatteryLife")
+    private fun requestAutoStartPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val pm = getSystemService(PowerManager::class.java)
+            if (pm.isIgnoringBatteryOptimizations(packageName)) {
+                Toast.makeText(this, "Auto Start (Ignore Battery) is already enabled!", Toast.LENGTH_SHORT).show()
+                return
+            }
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+            intent.data = Uri.parse("package:$packageName")
+            startActivity(intent)
+        } else {
+            Toast.makeText(this, "Not required on this Android version.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // ── Service control ───────────────────────────────────────────────────────
 
     private fun startReminderService() {
@@ -85,6 +116,12 @@ class MainActivity : AppCompatActivity() {
             ReminderService.start(this)
             Toast.makeText(this, R.string.reminder_started, Toast.LENGTH_SHORT).show()
         }
+        refreshUi()
+    }
+
+    private fun stopReminderService() {
+        ReminderService.stop(this)
+        Toast.makeText(this, R.string.reminder_stopped, Toast.LENGTH_SHORT).show()
         refreshUi()
     }
 
@@ -108,6 +145,10 @@ class MainActivity : AppCompatActivity() {
             getColor(if (btOn) R.color.status_on else R.color.status_off)
         )
 
-        binding.btnToggleReminder.text = getString(R.string.btn_start_reminder)
+        if (ReminderService.isRunning) {
+            binding.btnToggleReminder.text = getString(R.string.btn_stop_reminder)
+        } else {
+            binding.btnToggleReminder.text = getString(R.string.btn_start_reminder)
+        }
     }
 }

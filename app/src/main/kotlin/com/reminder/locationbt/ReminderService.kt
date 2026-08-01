@@ -33,6 +33,9 @@ class ReminderService : Service() {
         private const val CHANNEL_ID = "reminder_channel"
         private const val NOTIF_ID = 1
         private const val REMINDER_INTERVAL_MS = 60_000L  // every 60 seconds
+        
+        var isRunning = false
+            private set
 
         fun start(context: Context) {
             val intent = Intent(context, ReminderService::class.java)
@@ -67,6 +70,7 @@ class ReminderService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        isRunning = true
         createNotificationChannel()
         startForeground(NOTIF_ID, buildNotification())
         initSoundPool()
@@ -86,6 +90,7 @@ class ReminderService : Service() {
     }
 
     override fun onDestroy() {
+        isRunning = false
         handler.removeCallbacks(reminderRunnable)
         if (::soundPool.isInitialized) soundPool.release()
         super.onDestroy()
