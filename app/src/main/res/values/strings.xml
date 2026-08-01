@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Location &amp; BT Reminder</string>
+    <string name="app_name">Location Reminder</string>
     <string name="notif_title">Reminder Active</string>
-    <string name="notif_text">Monitoring Location &amp; Bluetooth state</string>
+    <string name="notif_text">Monitoring Location state</string>
     <string name="label_location">Location</string>
-    <string name="label_bluetooth">Bluetooth</string>
     <string name="location_on">ON</string>
     <string name="location_off">OFF</string>
-    <string name="bluetooth_on">ON</string>
-    <string name="bluetooth_off">OFF</string>
     <string name="btn_start_reminder">Start Reminder</string>
     <string name="btn_stop_reminder">Stop Reminder</string>
     <string name="btn_auto_start">Enable Auto Start</string>

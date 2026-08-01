@@ -2,7 +2,10 @@ package com.reminder.locationbt
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -26,9 +29,6 @@ class MainActivity : AppCompatActivity() {
     private val requiredPermissions: Array<String>
         get() = buildList {
             add(Manifest.permission.ACCESS_COARSE_LOCATION)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                add(Manifest.permission.BLUETOOTH_CONNECT)
-            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 add(Manifest.permission.POST_NOTIFICATIONS)
             }
@@ -61,9 +61,27 @@ class MainActivity : AppCompatActivity() {
         refreshUi()
     }
 
+    private val uiUpdateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            refreshUi()
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         refreshUi()
+        
+        // Register receiver for instant UI updates while app is open
+        val filter = IntentFilter().apply {
+            addAction("android.location.PROVIDERS_CHANGED")
+            addAction("android.location.MODE_CHANGED")
+        }
+        registerReceiver(uiUpdateReceiver, filter)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        unregisterReceiver(uiUpdateReceiver)
     }
 
     // ── Permissions ───────────────────────────────────────────────────────────
@@ -184,20 +202,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshUi() {
         val locOn = DeviceState.isLocationOn(this)
-        val btOn = DeviceState.isBluetoothOn(this)
 
         binding.tvLocationStatus.text = getString(
             if (locOn) R.string.location_on else R.string.location_off
         )
-        binding.tvBluetoothStatus.text = getString(
-            if (btOn) R.string.bluetooth_on else R.string.bluetooth_off
-        )
 
         binding.tvLocationStatus.setTextColor(
             getColor(if (locOn) R.color.status_on else R.color.status_off)
-        )
-        binding.tvBluetoothStatus.setTextColor(
-            getColor(if (btOn) R.color.status_on else R.color.status_off)
         )
 
         if (ReminderService.isRunning) {

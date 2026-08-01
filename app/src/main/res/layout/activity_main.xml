@@ -59,39 +59,7 @@
             tools:text="ON" />
     </LinearLayout>
 
-    <!-- Bluetooth Status Card -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:background="@drawable/card_bg"
-        android:padding="16dp"
-        android:layout_marginBottom="32dp"
-        android:gravity="center_vertical">
 
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_bluetooth"
-            android:contentDescription="Bluetooth"
-            android:layout_marginEnd="12dp" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/label_bluetooth"
-            android:textColor="@color/text_secondary"
-            android:textSize="16sp" />
-
-        <TextView
-            android:id="@+id/tvBluetoothStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            tools:text="OFF" />
-    </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnToggleReminder"

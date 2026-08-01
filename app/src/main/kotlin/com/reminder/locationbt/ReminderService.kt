@@ -39,15 +39,18 @@ class ReminderService : Service() {
 
         fun start(context: Context) {
             try {
+                isRunning = true
                 val intent = Intent(context, ReminderService::class.java)
                 context.startForegroundService(intent)
             } catch (e: Exception) {
+                isRunning = false
                 Log.e(TAG, "Failed to start ReminderService: \${e.message}")
             }
         }
 
         fun stop(context: Context) {
             try {
+                isRunning = false
                 val intent = Intent(context, ReminderService::class.java)
                 context.stopService(intent)
             } catch (e: Exception) {
@@ -58,7 +61,6 @@ class ReminderService : Service() {
 
     private lateinit var soundPool: SoundPool
     private var soundLocation = 0
-    private var soundBluetooth = 0
     private var soundsLoaded = false
 
     private val handler = Handler(Looper.getMainLooper())
@@ -120,12 +122,10 @@ class ReminderService : Service() {
             .build()
 
         soundPool.setOnLoadCompleteListener { _, _, _ ->
-            // Both sounds will trigger this; track when at least both are ready
             soundsLoaded = true
         }
 
         soundLocation = soundPool.load(this, R.raw.sound_location, 1)
-        soundBluetooth = soundPool.load(this, R.raw.sound_bluetooth, 1)
     }
 
     private fun playReminders() {
