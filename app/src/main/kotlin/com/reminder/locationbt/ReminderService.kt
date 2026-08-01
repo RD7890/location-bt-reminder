@@ -38,13 +38,21 @@ class ReminderService : Service() {
             private set
 
         fun start(context: Context) {
-            val intent = Intent(context, ReminderService::class.java)
-            context.startForegroundService(intent)
+            try {
+                val intent = Intent(context, ReminderService::class.java)
+                context.startForegroundService(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start ReminderService: \${e.message}")
+            }
         }
 
         fun stop(context: Context) {
-            val intent = Intent(context, ReminderService::class.java)
-            context.stopService(intent)
+            try {
+                val intent = Intent(context, ReminderService::class.java)
+                context.stopService(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to stop ReminderService: \${e.message}")
+            }
         }
     }
 
